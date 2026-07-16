@@ -14,6 +14,6 @@ export class FilmsService {
     if (!result) {
       return { total: 0, items: [] };
     }
-    return { total: result.schedule.length, items: [result] };
+    return { total: result.schedule.length, items: result.schedule };
   }
 }
