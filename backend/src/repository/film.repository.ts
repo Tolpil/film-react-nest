@@ -7,9 +7,7 @@ import { FilmConverter } from './film.converter';
 
 @Injectable()
 export class FilmRepository {
-  constructor(
-    @InjectModel(Film.name) private filmModel: Model<FilmDocument>,
-  ) {}
+  constructor(@InjectModel(Film.name) private filmModel: Model<FilmDocument>) {}
 
   async findAll(): Promise<{ total: number; items: FilmDto[] }> {
     const films = await this.filmModel.find().exec();
@@ -27,7 +25,7 @@ export class FilmRepository {
     return FilmConverter.toFilmScheduleDto(film);
   }
 
-  async create(filmData: any): Promise<Film> {
+  async create(filmData: Partial<Film>): Promise<Film> {
     const film = new this.filmModel(filmData);
     return film.save();
   }

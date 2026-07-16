@@ -8,7 +8,12 @@ async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const filmRepository = app.get(FilmRepository);
 
-  const dataPath = path.join(__dirname, '..', 'test', 'mongodb_initial_stub.json');
+  const dataPath = path.join(
+    __dirname,
+    '..',
+    'test',
+    'mongodb_initial_stub.json',
+  );
   const rawData = fs.readFileSync(dataPath, 'utf-8');
   const films = JSON.parse(rawData);
 
