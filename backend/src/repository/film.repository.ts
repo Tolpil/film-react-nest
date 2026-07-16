@@ -31,4 +31,8 @@ export class FilmRepository {
     const film = new this.filmModel(filmData);
     return film.save();
   }
+
+  async update(film: Film): Promise<void> {
+    await this.filmModel.updateOne({ id: film.id }, film).exec();
+  }
 }
