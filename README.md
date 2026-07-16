@@ -58,6 +58,27 @@ film-react-nest/
 | POST | `/api/afisha/order` | Бронирование билетов |
 | GET | `/content/afisha/*` | Статический контент |
 
+## Ход выполнения
+
+### Step 1. Создание компонентов Nest.js
+- Созданы контроллеры и сервисы для модулей `films` и `order`
+- Реализованы эндпоинты-пустышки:
+  - `GET /api/afisha/films` — возвращает `{ total: 0, items: [] }`
+  - `GET /api/afisha/films/:id/schedule` — возвращает `{ total: 0, items: [] }`
+  - `POST /api/afisha/order` — возвращает `{ total: 0, items: [] }`
+- Подключён `ServeStaticModule` для раздачи статического контента по пути `/content/afisha/*`
+- Описаны DTO-классы для фильмов (`FilmDto`, `ScheduleDto`, `FilmScheduleDto`) и заказов (`TicketDto`, `CreateOrderDto`, `OrderDto`)
+
+### Step 2. Имплементация хранилища
+- Созданы Mongoose-схемы для фильмов (`Film`, `Schedule`) с коллекцией `films`
+- Реализован MongoDB репозиторий (`FilmRepository`) с методами `findAll`, `findById`, `findScheduleById`
+- Создан конвертер (`FilmConverter`) для преобразования DTO в сущности Mongoose и обратно
+- Подключён `MongooseModule` в корневой модуль приложения
+- Создан `.env` файл с настройками подключения к MongoDB
+- Заполнена база данных 6 фильмами из `mongodb_initial_stub.json` через seed-скрипт
+- `GET /api/afisha/films` — возвращает 6 фильмов с полными данными
+- `GET /api/afisha/films/:id/schedule` — возвращает расписание с сеансами
+
 ## Установка
 
 ### MongoDB
@@ -107,14 +128,3 @@ MongoDB должна быть установлена и запущена.
 Запустите фронтенд:
 
 `npm run dev`
-
-## Ход выполнения
-
-### Step 1. Создание компонентов Nest.js
-- Созданы контроллеры и сервисы для модулей `films` и `order`
-- Реализованы эндпоинты-пустышки:
-  - `GET /api/afisha/films` — возвращает `{ total: 0, items: [] }`
-  - `GET /api/afisha/films/:id/schedule` — возвращает `{ total: 0, items: [] }`
-  - `POST /api/afisha/order` — возвращает `{ total: 0, items: [] }`
-- Подключён `ServeStaticModule` для раздачи статического контента по пути `/content/afisha/*`
-- Описаны DTO-классы для фильмов (`FilmDto`, `ScheduleDto`, `FilmScheduleDto`) и заказов (`TicketDto`, `CreateOrderDto`, `OrderDto`)
