@@ -9,10 +9,20 @@ import { FilmConverter } from './film.converter';
 export class FilmRepository {
   constructor(@InjectModel(Film.name) private filmModel: Model<FilmDocument>) {}
 
-  async findAll(): Promise<{ total: number; items: FilmDto[] }> {
-    const films = await this.filmModel.find().exec();
+  async findAll(
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<{ total: number; items: FilmDto[] }> {
+    const [films, total] = await Promise.all([
+      this.filmModel.find().skip(offset).limit(limit).exec(),
+      this.filmModel.countDocuments().exec(),
+    ]);
     const items = films.map(FilmConverter.toFilmDto);
-    return { total: items.length, items };
+    return { total, items };
+  }
+
+  async findByIds(ids: string[]): Promise<Film[]> {
+    return this.filmModel.find({ id: { $in: ids } }).exec();
   }
 
   async findById(id: string): Promise<Film | null> {

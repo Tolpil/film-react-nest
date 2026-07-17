@@ -15,20 +15,21 @@ export class OrderService {
     const { tickets } = createOrderDto;
     const items: OrderDto[] = [];
     let total = 0;
-    const updatedFilms = new Map<string, Film>();
+
+    // 1. Получить уникальные ID фильмов и загрузить их одним запросом
+    const filmIds = [...new Set(tickets.map((t) => t.film))];
+    const films = await this.filmRepository.findByIds(filmIds);
+    const updatedFilms = new Map<string, Film>(films.map((f) => [f.id, f]));
+
+    // Проверить, что все фильмы найдены
+    for (const filmId of filmIds) {
+      if (!updatedFilms.has(filmId)) {
+        throw new NotFoundException(`Film with id "${filmId}" not found`);
+      }
+    }
 
     for (const ticket of tickets) {
-      // 1. Найти фильм по ID (из кэша или из БД)
-      let film = updatedFilms.get(ticket.film);
-      if (!film) {
-        film = await this.filmRepository.findById(ticket.film);
-        if (!film) {
-          throw new NotFoundException(
-            `Film with id "${ticket.film}" not found`,
-          );
-        }
-        updatedFilms.set(ticket.film, film);
-      }
+      const film = updatedFilms.get(ticket.film)!;
 
       // 2. Найти сеанс по ID
       const schedule = film.schedule.find((s) => s.id === ticket.session);
