@@ -1,30 +1,90 @@
-# React + TypeScript + Vite
+# Film — Frontend (React + TypeScript + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Фронтенд-часть сервиса для покупки билетов в кинотеатр. Реализован на React с TypeScript, сборка Vite.
 
-Currently, two official plugins are available:
+## Стек
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Фреймворк:** React 18
+- **Язык:** TypeScript
+- **Сборщик:** Vite 5
+- **Стили:** SCSS (CSS-модули)
+- **Storybook:** 8 (для изолированной разработки компонентов)
 
-## Expanding the ESLint configuration
+## Переменные окружения
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+Создайте файл `.env` в корне frontend на основе `.env.example`:
 
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+```env
+VITE_API_URL=https://stub.practicum-team.ru/api/afisha
+VITE_CDN_URL=https://stub.practicum-team.ru/content/afisha
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+| Переменная    | Описание              | Значение по умолчанию                              |
+|---------------|-----------------------|----------------------------------------------------|
+| VITE_API_URL  | Базовый URL API       | https://stub.practicum-team.ru/api/afisha          |
+| VITE_CDN_URL  | URL для статического контента (изображения) | https://stub.practicum-team.ru/content/afisha |
+
+## Установка и запуск
+
+```bash
+# Установка зависимостей
+$ npm install
+
+# Запуск в режиме разработки
+$ npm run dev
+
+# Сборка для production
+$ npm run build
+
+# Предпросмотр production-сборки
+$ npm run preview
+```
+
+## Storybook
+
+```bash
+# Запуск Storybook
+$ npm run storybook
+
+# Сборка Storybook
+$ npm run build-storybook
+```
+
+## Линтинг
+
+```bash
+$ npm run lint
+```
+
+## Структура проекта
+
+```
+src/
+├── components/         # React-компоненты
+│   ├── App/
+│   ├── Basket/
+│   ├── Button/
+│   ├── Card/
+│   ├── ContactsForm/
+│   ├── FilmInfo/
+│   ├── FilmPreview/
+│   ├── FilmsGallery/
+│   ├── Header/
+│   ├── Layout/
+│   ├── Message/
+│   ├── Modal/
+│   ├── ModalHeader/
+│   ├── SelectPlaces/
+│   ├── SelectSession/
+│   └── Ticket/
+├── hooks/              # Кастомные React-хуки
+│   └── useAppState.tsx
+├── utils/              # Утилиты
+│   ├── api.ts
+│   ├── constants.ts
+│   └── state.ts
+├── scss/               # Глобальные стили и миксины
+├── stories/            # Конфигурация Storybook
+├── assets/             # Статические ресурсы (SVG)
+├── main.tsx            # Точка входа
+└── index.scss          # Глобальные стили
