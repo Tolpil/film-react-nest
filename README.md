@@ -183,7 +183,7 @@ DATABASE_PASSWORD="examplepass"
 npm run start:dev
 ```
 
-Бэкенд будет доступен на `http://localhost:3001`.
+Бэкенд будет доступен на `http://localhost:3000`.
 
 ### 3. Фронтенд
 
@@ -195,8 +195,8 @@ npm ci
 Создайте файл `.env` из примера `.env.example`:
 
 ```env
-VITE_API_URL=http://localhost:3001/api/afisha
-VITE_CDN_URL=http://localhost:3001/content/afisha
+VITE_API_URL=http://localhost:3000/api/afisha
+VITE_CDN_URL=http://localhost:3000/content/afisha
 ```
 
 Запустите фронтенд:
@@ -213,13 +213,13 @@ npm run dev
 
 ```bash
 # Список фильмов
-curl http://localhost:3001/api/afisha/films
+curl http://localhost:3000/api/afisha/films
 
 # Расписание фильма
-curl http://localhost:3001/api/afisha/films/0e33c7f6-27a7-4aa0-8e61-65d7e5effecf/schedule
+curl http://localhost:3000/api/afisha/films/0e33c7f6-27a7-4aa0-8e61-65d7e5effecf/schedule
 
 # Бронирование билетов
-curl -X POST http://localhost:3001/api/afisha/order \
+curl -X POST http://localhost:3000/api/afisha/order \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
