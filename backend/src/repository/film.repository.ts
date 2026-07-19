@@ -1,32 +1,44 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Film, FilmDocument } from './film.schema';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { FilmEntity } from './film.entity';
+import { ScheduleEntity } from './schedule.entity';
 import { FilmDto, FilmScheduleDto } from '../films/dto/films.dto';
 import { FilmConverter } from './film.converter';
 
 @Injectable()
 export class FilmRepository {
-  constructor(@InjectModel(Film.name) private filmModel: Model<FilmDocument>) {}
+  constructor(
+    @InjectRepository(FilmEntity)
+    private readonly filmRepository: Repository<FilmEntity>,
+    @InjectRepository(ScheduleEntity)
+    private readonly scheduleRepository: Repository<ScheduleEntity>,
+  ) {}
 
   async findAll(
     limit: number = 50,
     offset: number = 0,
   ): Promise<{ total: number; items: FilmDto[] }> {
-    const [films, total] = await Promise.all([
-      this.filmModel.find().skip(offset).limit(limit).exec(),
-      this.filmModel.countDocuments().exec(),
-    ]);
+    const [films, total] = await this.filmRepository.findAndCount({
+      skip: offset,
+      take: limit,
+    });
     const items = films.map(FilmConverter.toFilmDto);
     return { total, items };
   }
 
-  async findByIds(ids: string[]): Promise<Film[]> {
-    return this.filmModel.find({ id: { $in: ids } }).exec();
+  async findByIds(ids: string[]): Promise<FilmEntity[]> {
+    return this.filmRepository.find({
+      where: { id: ids as any },
+      relations: { schedule: true },
+    });
   }
 
-  async findById(id: string): Promise<Film | null> {
-    return this.filmModel.findOne({ id }).exec();
+  async findById(id: string): Promise<FilmEntity | null> {
+    return this.filmRepository.findOne({
+      where: { id },
+      relations: { schedule: true },
+    });
   }
 
   async findScheduleById(id: string): Promise<FilmScheduleDto | null> {
@@ -35,12 +47,12 @@ export class FilmRepository {
     return FilmConverter.toFilmScheduleDto(film);
   }
 
-  async create(filmData: Partial<Film>): Promise<Film> {
-    const film = new this.filmModel(filmData);
-    return film.save();
+  async create(filmData: Partial<FilmEntity>): Promise<FilmEntity> {
+    const film = this.filmRepository.create(filmData);
+    return this.filmRepository.save(film);
   }
 
-  async update(film: Film): Promise<void> {
-    await this.filmModel.updateOne({ id: film.id }, film).exec();
+  async update(film: FilmEntity): Promise<void> {
+    await this.filmRepository.save(film);
   }
 }

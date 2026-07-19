@@ -130,21 +130,17 @@ film-react-nest/
 - Создана ветка `review-2` от `main`
 - Установлены зависимости `@nestjs/typeorm`, `typeorm`, `pg` для работы с PostgreSQL
 
-### Шаг 2. Создание сущностей Film и Schedule (TypeORM)
+### Шаг 2. Подключение TypeORM и PostgreSQL
 
-- Создана сущность [`FilmEntity`](backend/src/repository/film.entity.ts) — таблица `film` с полями: id, rating, director, tags, title, about, description, image, cover
-- Создана сущность [`ScheduleEntity`](backend/src/repository/schedule.entity.ts) — таблица `schedule` с полями: id, daytime, hall, rows, seats, price, taken, filmId
-- Настроена связь **один-ко-многим** (OneToMany/ManyToOne): один Film → много Schedule
-- Добавлен индексный файл [`index.ts`](backend/src/repository/index.ts) для реэкспорта сущностей
-
-### Шаг 3. Установка PostgreSQL и наполнение БД
-
-- Запущен Docker-контейнер PostgreSQL 16 (`postgres_container`)
-- Созданы SQL-скрипты для инициализации и наполнения БД:
-  - [`prac.init.sql`](backend/test/prac.init.sql) — создание таблиц `film` и `schedule` со связью по внешнему ключу
-  - [`prac.films.sql`](backend/test/prac.films.sql) — заполнение таблицы `film` 6 фильмами
-  - [`prac.shedules.sql`](backend/test/prac.shedules.sql) — заполнение таблицы `schedule` 54 сеансами
-- Выполнена инициализация БД: созданы таблицы, вставлены тестовые данные
+- Обновлён [`app.module.ts`](backend/src/app.module.ts) — `MongooseModule` заменён на `TypeOrmModule` с подключением к PostgreSQL
+- Обновлён [`app.config.provider.ts`](backend/src/app.config.provider.ts) — добавлены поля `username` и `password` для подключения к БД
+- Обновлён [`film.repository.ts`](backend/src/repository/film.repository.ts) — переписан на TypeORM (использует `InjectRepository` и `Repository`)
+- Обновлён [`film.converter.ts`](backend/src/repository/film.converter.ts) — работает с `FilmEntity` и `ScheduleEntity` вместо Mongoose-схем
+- Обновлён [`order.service.ts`](backend/src/order/order.service.ts) — импорт `Film` заменён на `FilmEntity`
+- Удалена Mongoose-схема [`film.schema.ts`](backend/src/repository/film.schema.ts)
+- Обновлён `.env.example` — добавлены `DATABASE_DRIVER=postgres`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`
+- Создан `.env` файл с настройками подключения к PostgreSQL
+- Сборка `nest build` проходит успешно
 
 ## Установка
 
