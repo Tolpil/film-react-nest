@@ -4,7 +4,7 @@ Fullstack-приложение кинотеатра: афиша фильмов �
 
 ## Стек технологий
 
-- **Бэкенд:** NestJS, MongoDB (Mongoose), Express
+- **Бэкенд:** NestJS, PostgreSQL (TypeORM), Express
 - **Фронтенд:** React 18, TypeScript, Vite, SCSS, Storybook
 - **API:** OpenAPI 3.0 (см. [`film.yml`](film.yml))
 
@@ -118,6 +118,33 @@ film-react-nest/
   - просмотреть список фильмов (`GET /api/afisha/films`)
   - ознакомиться с конкретным фильмом и его сеансами (`GET /api/afisha/films/:id/schedule`)
   - создать заказ (`POST /api/afisha/order`)
+
+---
+
+## Вторая часть проектной работы — Модульный API-сервис (часть 2)
+
+Перевод бэкенда с MongoDB на PostgreSQL с использованием TypeORM.
+
+### Шаг 1. Подготовка окружения
+
+- Создана ветка `review-2` от `main`
+- Установлены зависимости `@nestjs/typeorm`, `typeorm`, `pg` для работы с PostgreSQL
+
+### Шаг 2. Создание сущностей Film и Schedule (TypeORM)
+
+- Создана сущность [`FilmEntity`](backend/src/repository/film.entity.ts) — таблица `film` с полями: id, rating, director, tags, title, about, description, image, cover
+- Создана сущность [`ScheduleEntity`](backend/src/repository/schedule.entity.ts) — таблица `schedule` с полями: id, daytime, hall, rows, seats, price, taken, filmId
+- Настроена связь **один-ко-многим** (OneToMany/ManyToOne): один Film → много Schedule
+- Добавлен индексный файл [`index.ts`](backend/src/repository/index.ts) для реэкспорта сущностей
+
+### Шаг 3. Установка PostgreSQL и наполнение БД
+
+- Запущен Docker-контейнер PostgreSQL 16 (`postgres_container`)
+- Созданы SQL-скрипты для инициализации и наполнения БД:
+  - [`prac.init.sql`](backend/test/prac.init.sql) — создание таблиц `film` и `schedule` со связью по внешнему ключу
+  - [`prac.films.sql`](backend/test/prac.films.sql) — заполнение таблицы `film` 6 фильмами
+  - [`prac.shedules.sql`](backend/test/prac.shedules.sql) — заполнение таблицы `schedule` 54 сеансами
+- Выполнена инициализация БД: созданы таблицы, вставлены тестовые данные
 
 ## Установка
 
