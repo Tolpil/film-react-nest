@@ -62,6 +62,42 @@ film-react-nest/
 
 ## Ход выполнения
 
+### Первая часть проектной работы — Модульный API-сервис (часть 1)
+
+Реализация базового бэкенда на NestJS с хранением данных в MongoDB через Mongoose.
+
+#### Step 1. Создание компонентов Nest.js
+- Созданы контроллеры и сервисы для модулей `films` и `order`
+- Реализованы эндпоинты-пустышки
+- Подключён `ServeStaticModule` для раздачи статического контента по пути `/content/afisha/*`
+- Описаны DTO-классы для фильмов (`FilmDto`, `ScheduleDto`, `FilmScheduleDto`) и заказов (`TicketDto`, `CreateOrderDto`, `OrderDto`)
+
+#### Step 2. Имплементация хранилища
+- Созданы Mongoose-схемы для фильмов (`Film`, `Schedule`) с коллекцией `films`
+- Реализован MongoDB репозиторий (`FilmRepository`) с методами `findAll`, `findById`, `findScheduleById`
+- Создан конвертер (`FilmConverter`) для преобразования DTO в сущности Mongoose и обратно
+- Подключён `MongooseModule` в корневой модуль приложения
+- Заполнена база данных 6 фильмами из `mongodb_initial_stub.json` через seed-скрипт
+
+#### Step 3. Имплементация бизнес-логики бронирования билетов
+- Реализован метод `createOrder()` в `OrderService`:
+  - Поиск фильма и сеанса по идентификаторам
+  - Валидация цены билета
+  - Проверка, что ряд и место находятся в пределах зала
+  - Проверка, что место ещё не занято (ошибка `BadRequestException` при повторе)
+  - Сохранение занятого места в формате `${row}:${seat}` в поле `taken` сеанса
+  - Поддержка нескольких билетов в одном заказе (в т.ч. на разные фильмы)
+
+#### Step 3.1. Исправление возврата расписания
+- Исправлен метод `getFilmSchedule()` в `FilmsService` — теперь возвращает плоский массив сеансов, а не объект фильма с вложенным `schedule`
+
+#### Step 4. Завершение
+- Проверена работа всего приложения в соответствии с чек-листом
+- Исправлена типизация — убрано использование `any`
+- Фронтенд и бэкенд работают корректно
+
+---
+
 ### Вторая часть проектной работы — Модульный API-сервис (часть 2)
 
 Перевод бэкенда с MongoDB на PostgreSQL с использованием TypeORM.
@@ -87,8 +123,8 @@ film-react-nest/
 
 #### Сущности базы данных
 
-- **Film** (`film.entity.ts`) — хранит информацию о фильме: id, rating, director, tags, title, about, description, image, cover. Связана один-ко-многим с Schedule.
-- **Schedule** (`schedule.entity.ts`) — хранит информацию о сеансах: id, daytime, hall, rows, seats, price, taken (занятые места). Связана многие-к-одному с Film.
+- **Film** ([`film.entity.ts`](backend/src/repository/film.entity.ts)) — хранит информацию о фильме: id, rating, director, tags, title, about, description, image, cover. Связана один-ко-многим с Schedule.
+- **Schedule** ([`schedule.entity.ts`](backend/src/repository/schedule.entity.ts)) — хранит информацию о сеансах: id, daytime, hall, rows, seats, price, taken (занятые места). Связана многие-к-одному с Film.
 
 #### SQL-скрипты для инициализации БД
 
