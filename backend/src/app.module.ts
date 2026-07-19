@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ConfigModule } from '@nestjs/config';
@@ -19,13 +20,18 @@ import { ScheduleEntity } from './repository/schedule.entity';
       isGlobal: true,
       cache: true,
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: process.env.DATABASE_URL || 'postgres://localhost:5432/exampledb',
-      username: process.env.DATABASE_USERNAME || 'exampleuser',
-      password: process.env.DATABASE_PASSWORD || 'examplepass',
-      entities: [FilmEntity, ScheduleEntity],
-      synchronize: false,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: () => ({
+        type: 'postgres',
+        host: process.env.DATABASE_HOST || 'localhost',
+        port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+        database: process.env.DATABASE_NAME || 'exampledb',
+        username: process.env.DATABASE_USERNAME || 'exampleuser',
+        password: process.env.DATABASE_PASSWORD || 'examplepass',
+        entities: [FilmEntity, ScheduleEntity],
+        synchronize: false,
+      }),
     }),
     TypeOrmModule.forFeature([FilmEntity, ScheduleEntity]),
     ServeStaticModule.forRoot({

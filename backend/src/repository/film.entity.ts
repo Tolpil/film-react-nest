@@ -1,9 +1,4 @@
-import {
-  Entity,
-  PrimaryColumn,
-  Column,
-  OneToMany,
-} from 'typeorm';
+import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
 import { ScheduleEntity } from './schedule.entity';
 
 @Entity({ name: 'film' })

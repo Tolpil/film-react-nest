@@ -19,7 +19,9 @@ export class OrderService {
     // 1. Получить уникальные ID фильмов и загрузить их одним запросом
     const filmIds = [...new Set(tickets.map((t) => t.film))];
     const films = await this.filmRepository.findByIds(filmIds);
-    const updatedFilms = new Map<string, FilmEntity>(films.map((f) => [f.id, f]));
+    const updatedFilms = new Map<string, FilmEntity>(
+      films.map((f) => [f.id, f]),
+    );
 
     // Проверить, что все фильмы найдены
     for (const filmId of filmIds) {
