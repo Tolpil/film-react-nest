@@ -4,7 +4,12 @@ export const configProvider = {
   imports: [ConfigModule.forRoot()],
   provide: 'CONFIG',
   useValue: <AppConfig>{
-    //TODO прочесть переменнные среды
+    database: {
+      driver: process.env.DATABASE_DRIVER || 'postgres',
+      url: process.env.DATABASE_URL || 'postgres://localhost:5432/exampledb',
+      username: process.env.DATABASE_USERNAME || 'exampleuser',
+      password: process.env.DATABASE_PASSWORD || 'examplepass',
+    },
   },
 };
 
@@ -15,4 +20,6 @@ export interface AppConfig {
 export interface AppConfigDatabase {
   driver: string;
   url: string;
+  username: string;
+  password: string;
 }

@@ -4,7 +4,7 @@ Fullstack-приложение кинотеатра: афиша фильмов �
 
 ## Стек технологий
 
-- **Бэкенд:** NestJS, MongoDB (Mongoose), Express
+- **Бэкенд:** NestJS, PostgreSQL (TypeORM)
 - **Фронтенд:** React 18, TypeScript, Vite, SCSS, Storybook
 - **API:** OpenAPI 3.0 (см. [`film.yml`](film.yml))
 
@@ -14,11 +14,11 @@ Fullstack-приложение кинотеатра: афиша фильмов �
 film-react-nest/
 ├── backend/          # Бэкенд на NestJS
 │   ├── src/
-│   │   ├── films/    # Модуль фильмов
-│   │   ├── order/    # Модуль заказов
-│   │   └── repository/  # Репозиторий для хранения данных
+│   │   ├── films/        # Модуль фильмов
+│   │   ├── order/        # Модуль заказов
+│   │   └── repository/   # Репозиторий (TypeORM)
 │   ├── public/       # Статические файлы (изображения)
-│   └── test/         # Тесты
+│   └── test/         # Тесты и SQL-скрипты
 ├── frontend/         # Фронтенд на React + Vite
 │   └── src/
 │       ├── components/  # React-компоненты
@@ -62,26 +62,24 @@ film-react-nest/
 
 ## Ход выполнения
 
-### Step 1. Создание компонентов Nest.js
+### Первая часть проектной работы — Модульный API-сервис (часть 1)
+
+Реализация базового бэкенда на NestJS с хранением данных в MongoDB через Mongoose.
+
+#### Step 1. Создание компонентов Nest.js
 - Созданы контроллеры и сервисы для модулей `films` и `order`
-- Реализованы эндпоинты-пустышки:
-  - `GET /api/afisha/films` — возвращает `{ total: 0, items: [] }`
-  - `GET /api/afisha/films/:id/schedule` — возвращает `{ total: 0, items: [] }`
-  - `POST /api/afisha/order` — возвращает `{ total: 0, items: [] }`
+- Реализованы эндпоинты-пустышки
 - Подключён `ServeStaticModule` для раздачи статического контента по пути `/content/afisha/*`
 - Описаны DTO-классы для фильмов (`FilmDto`, `ScheduleDto`, `FilmScheduleDto`) и заказов (`TicketDto`, `CreateOrderDto`, `OrderDto`)
 
-### Step 2. Имплементация хранилища
+#### Step 2. Имплементация хранилища
 - Созданы Mongoose-схемы для фильмов (`Film`, `Schedule`) с коллекцией `films`
 - Реализован MongoDB репозиторий (`FilmRepository`) с методами `findAll`, `findById`, `findScheduleById`
 - Создан конвертер (`FilmConverter`) для преобразования DTO в сущности Mongoose и обратно
 - Подключён `MongooseModule` в корневой модуль приложения
-- Создан `.env` файл с настройками подключения к MongoDB
 - Заполнена база данных 6 фильмами из `mongodb_initial_stub.json` через seed-скрипт
-- `GET /api/afisha/films` — возвращает 6 фильмов с полными данными
-- `GET /api/afisha/films/:id/schedule` — возвращает расписание с сеансами
 
-### Step 3. Имплементация бизнес-логики бронирования билетов
+#### Step 3. Имплементация бизнес-логики бронирования билетов
 - Реализован метод `createOrder()` в `OrderService`:
   - Поиск фильма и сеанса по идентификаторам
   - Валидация цены билета
@@ -89,82 +87,171 @@ film-react-nest/
   - Проверка, что место ещё не занято (ошибка `BadRequestException` при повторе)
   - Сохранение занятого места в формате `${row}:${seat}` в поле `taken` сеанса
   - Поддержка нескольких билетов в одном заказе (в т.ч. на разные фильмы)
-- Добавлен метод `update()` в `FilmRepository` для сохранения изменений в MongoDB
-- `POST /api/afisha/order` — возвращает `{ total, items }` с подтверждением бронирования
 
-### Step 3.1. Исправление возврата расписания
-- Исправлен метод `getFilmSchedule()` в `FilmsService`:
-  - Раньше возвращал `items: [result]` (объект фильма с вложенным `schedule`)
-  - Теперь возвращает `items: result.schedule` (плоский массив сеансов)
-- Это позволило фронтенду корректно отображать схему зала с выбором мест
+#### Step 3.1. Исправление возврата расписания
+- Исправлен метод `getFilmSchedule()` в `FilmsService` — теперь возвращает плоский массив сеансов, а не объект фильма с вложенным `schedule`
 
-### Step 4. Завершение
-- Проверена работа всего приложения в соответствии с чек-листом:
-  - ✅ Линтинг проходит без ошибок (`npm run lint`)
-  - ✅ Типизация TypeScript — исправлено использование `any` на `Partial<Film>`
-  - ✅ Файловая структура соответствует стартеркиту (папки `films`, `order`, `repository`)
-  - ✅ Все параметры приложения берутся из `.env` через `ConfigModule`
-  - ✅ Данные хранятся в MongoDB через Mongoose
-  - ✅ Взаимодействие с БД вынесено в отдельный репозиторий (`FilmRepository`)
-  - ✅ Контроллеры не содержат бизнес-логики, только передача в сервисы
-  - ✅ Используются классы DTO
-  - ✅ Раздача статического контента из папки `public` через `ServeStaticModule`
-  - ✅ Компоненты NestJS используют внедрение через конструктор (DI)
-  - ✅ Фронтенд и бэкенд работают корректно, в консоли Network нет ошибок 500/404
-  - ✅ При повторном бронировании одного места запрос завершается ошибкой 400
-  - ✅ Занятые места сохраняются в поле `taken` в формате `${row}:${seat}`
-  - ✅ Приложение не падает при разных запросах
-- Пользователь может:
-  - просмотреть список фильмов (`GET /api/afisha/films`)
-  - ознакомиться с конкретным фильмом и его сеансами (`GET /api/afisha/films/:id/schedule`)
-  - создать заказ (`POST /api/afisha/order`)
+#### Step 4. Завершение
+- Проверена работа всего приложения в соответствии с чек-листом
+- Исправлена типизация — убрано использование `any`
+- Фронтенд и бэкенд работают корректно
 
-## Установка
+---
 
-### MongoDB
+### Вторая часть проектной работы — Модульный API-сервис (часть 2)
 
-Установите MongoDB скачав дистрибутив с официального сайта или с помощью пакетного менеджера вашей ОС. Также можно воспользоваться Docker (см. ветку `feat/docker`).
+Перевод бэкенда с MongoDB на PostgreSQL с использованием TypeORM.
 
-Выполните скрипт `test/mongodb_initial_stub.js` в консоли `mongo`.
+#### Шаг 1. Подготовка окружения
 
-### Бэкенд
+- Создана ветка `review-2` от `main`
+- Установлены зависимости `@nestjs/typeorm`, `typeorm`, `pg` для работы с PostgreSQL
+- Удалены зависимости `mongoose` и `@nestjs/mongoose`
 
-Перейдите в папку с исходным кодом бэкенда
+#### Шаг 2. Подключение TypeORM и PostgreSQL
 
-`cd backend`
+- Обновлён [`app.module.ts`](backend/src/app.module.ts) — `MongooseModule` заменён на `TypeOrmModule` с подключением к PostgreSQL
+- Обновлён [`app.config.provider.ts`](backend/src/app.config.provider.ts) — добавлены поля `username` и `password` для подключения к БД
+- Обновлён [`film.repository.ts`](backend/src/repository/film.repository.ts) — переписан на TypeORM (использует `InjectRepository` и `Repository`)
+- Обновлён [`film.converter.ts`](backend/src/repository/film.converter.ts) — работает с `FilmEntity` и `ScheduleEntity` вместо Mongoose-схем
+- Обновлён [`order.service.ts`](backend/src/order/order.service.ts) — импорт `Film` заменён на `FilmEntity`
+- Удалена Mongoose-схема [`film.schema.ts`](backend/src/repository/film.schema.ts)
+- Обновлён `.env.example` — добавлены `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`
+- Создан `.env` файл с настройками подключения к PostgreSQL
+- Сборка `nest build` проходит успешно
+- Линтинг `npm run lint` проходит без ошибок
 
-Установите зависимости (точно такие же, как в package-lock.json) помощью команд
+#### Сущности базы данных
 
-`npm ci` или `yarn install --frozen-lockfile`
+- **Film** ([`film.entity.ts`](backend/src/repository/film.entity.ts)) — хранит информацию о фильме: id, rating, director, tags, title, about, description, image, cover. Связана один-ко-многим с Schedule.
+- **Schedule** ([`schedule.entity.ts`](backend/src/repository/schedule.entity.ts)) — хранит информацию о сеансах: id, daytime, hall, rows, seats, price, taken (занятые места). Связана многие-к-одному с Film.
 
-Создайте `.env` файл из примера `.env.example`, в нём укажите:
+#### SQL-скрипты для инициализации БД
 
-* `DATABASE_DRIVER` - тип драйвера СУБД - в нашем случае это `mongodb` 
-* `DATABASE_URL` - адрес СУБД MongoDB, например `mongodb://127.0.0.1:27017/practicum`.  
+В папке [`backend/test/`](backend/test/) находятся SQL-скрипты:
 
-MongoDB должна быть установлена и запущена.
+- [`prac.init.sql`](backend/test/prac.init.sql) — создание таблиц `film` и `schedule`
+- [`prac.films.sql`](backend/test/prac.films.sql) — заполнение таблицы фильмов (6 фильмов)
+- [`prac.shedules.sql`](backend/test/prac.shedules.sql) — заполнение таблицы расписания сеансов
+
+## Установка и запуск
+
+### Предварительные требования
+
+- Node.js 18+
+- PostgreSQL 14+ (установленная и запущенная)
+- npm или yarn
+
+### 1. Настройка PostgreSQL
+
+Создайте базу данных и пользователя:
+
+```sql
+CREATE USER exampleuser WITH PASSWORD 'examplepass';
+CREATE DATABASE exampledb OWNER exampleuser;
+```
+
+Выполните SQL-скрипты для создания таблиц и наполнения данными:
+
+```bash
+psql -U exampleuser -d exampledb < backend/test/prac.init.sql
+psql -U exampleuser -d exampledb < backend/test/prac.films.sql
+psql -U exampleuser -d exampledb < backend/test/prac.shedules.sql
+```
+
+### 2. Бэкенд
+
+```bash
+cd backend
+npm ci
+```
+
+Создайте файл `.env` из примера `.env.example`:
+
+```env
+DATABASE_DRIVER="postgres"
+DATABASE_HOST="localhost"
+DATABASE_PORT="5432"
+DATABASE_NAME="exampledb"
+DATABASE_USERNAME="exampleuser"
+DATABASE_PASSWORD="examplepass"
+```
 
 Запустите бэкенд:
 
-`npm start:debug`
+```bash
+npm run start:dev
+```
 
-Для проверки отправьте тестовый запрос с помощью Postman или `curl`.
+Бэкенд будет доступен на `http://localhost:3000`.
 
-### Фронтенд
+### 3. Фронтенд
 
-Перейдите в папку фронтенда:
+```bash
+cd frontend
+npm ci
+```
 
-`cd frontend`
+Создайте файл `.env` из примера `.env.example`:
 
-Установите зависимости:
-
-`npm ci`
-
-Создайте `.env` файл из примера `.env.example`:
-
-* `VITE_API_URL` - URL бэкенд API
-* `VITE_CDN_URL` - URL для статического контента
+```env
+VITE_API_URL=http://localhost:3000/api/afisha
+VITE_CDN_URL=http://localhost:3000/content/afisha
+```
 
 Запустите фронтенд:
 
-`npm run dev`
+```bash
+npm run dev
+```
+
+Фронтенд будет доступен на `http://localhost:5173`.
+
+### Проверка работы
+
+Отправьте тестовые запросы с помощью Postman (коллекция [`film.postman.json`](film.postman.json)) или curl:
+
+```bash
+# Список фильмов
+curl http://localhost:3000/api/afisha/films
+
+# Расписание фильма
+curl http://localhost:3000/api/afisha/films/0e33c7f6-27a7-4aa0-8e61-65d7e5effecf/schedule
+
+# Бронирование билетов
+curl -X POST http://localhost:3000/api/afisha/order \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "phone": "+71234567890",
+    "tickets": [
+      {
+        "film": "0e33c7f6-27a7-4aa0-8e61-65d7e5effecf",
+        "session": "f2e429b0-685d-41f8-a8cd-1d8cb63b99ce",
+        "row": 1,
+        "seat": 1,
+        "price": 350
+      }
+    ]
+  }'
+```
+
+## Чек-лист
+
+- ✅ Линтинг проходит без ошибок (`npm run lint`)
+- ✅ Типизация TypeScript — без использования `any`
+- ✅ Файловая структура соответствует стартеркиту (папки `films`, `order`, `repository`)
+- ✅ Все параметры приложения берутся из `.env` через `ConfigModule`
+- ✅ Данные хранятся в PostgreSQL через TypeORM
+- ✅ Взаимодействие с БД вынесено в отдельный репозиторий (`FilmRepository`)
+- ✅ Контроллеры не содержат бизнес-логики, только передача в сервисы
+- ✅ Используются классы DTO
+- ✅ Раздача статического контента из папки `public` через `ServeStaticModule`
+- ✅ Компоненты NestJS используют внедрение через конструктор (DI)
+- ✅ Фронтенд и бэкенд работают корректно, в консоли Network нет ошибок 500/404
+- ✅ При повторном бронировании одного места запрос завершается ошибкой 400
+- ✅ Занятые места сохраняются в поле `taken` в формате `${row}:${seat}`
+- ✅ Приложение не падает при разных запросах
+- ✅ Код и зависимости mongoose удалены из проекта
+- ✅ Описаны сущности Film и Schedule со связью один-ко-многим
+- ✅ Взаимодействие с данными через репозитории TypeORM
