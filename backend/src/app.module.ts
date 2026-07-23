@@ -13,7 +13,6 @@ import { OrderService } from './order/order.service';
 import { FilmRepository } from './repository/film.repository';
 import { FilmEntity } from './repository/film.entity';
 import { ScheduleEntity } from './repository/schedule.entity';
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -43,6 +42,11 @@ import { ScheduleEntity } from './repository/schedule.entity';
     }),
   ],
   controllers: [FilmsController, OrderController],
-  providers: [configProvider, FilmsService, OrderService, FilmRepository],
+  providers: [
+    configProvider,
+    FilmsService,
+    OrderService,
+    FilmRepository,
+  ],
 })
 export class AppModule {}

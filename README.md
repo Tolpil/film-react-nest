@@ -134,6 +134,66 @@ film-react-nest/
 - [`prac.films.sql`](backend/test/prac.films.sql) — заполнение таблицы фильмов (6 фильмов)
 - [`prac.shedules.sql`](backend/test/prac.shedules.sql) — заполнение таблицы расписания сеансов
 
+---
+
+### Третья часть проектной работы — Деплой сервиса
+
+Реализация системы логирования, юнит-тестов, контейнеризация и автоматизация деплоя.
+
+#### Шаг 1. Реализация логгеров
+
+Созданы три логгера в директории [`backend/src/logger/`](backend/src/logger/):
+
+- **DevLogger** ([`dev-logger.ts`](backend/src/logger/dev-logger.ts)) — наследуется от `ConsoleLogger` NestJS, используется в режиме разработки. Сохраняет цветной вывод в консоль.
+- **JsonLogger** ([`json-logger.ts`](backend/src/logger/json-logger.ts)) — реализует `LoggerService`, выводит логи в формате JSON: `{"level": "...", "message": "...", "optionalParams": [...]}`.
+- **TSKVLogger** ([`tskv-logger.ts`](backend/src/logger/tskv-logger.ts)) — реализует `LoggerService`, выводит логи в формате TSKV (Tab-Separated Key-Value): `level=...\tmessage=...\tcontext=...`.
+
+Выбор логгера происходит через переменную окружения `LOG_FORMAT` в файле `.env`:
+- `dev` (по умолчанию) — DevLogger
+- `json` — JsonLogger
+- `tskv` — TSKVLogger
+
+Логгер подключается в [`main.ts`](backend/src/main.ts) через `app.useLogger()` с опцией `bufferLogs: true`. Выбор реализации осуществляется через `switch` по переменной `LOG_FORMAT`.
+
+#### Шаг 2. Написание тестов
+
+Созданы юнит-тесты для логгеров и контроллеров:
+
+- **JsonLogger** ([`json-logger.spec.ts`](backend/src/logger/json-logger.spec.ts)) — 7 тестов: проверка формата JSON, включения optionalParams, вызовов console.log/error/warn/debug
+- **TSKVLogger** ([`tskv-logger.spec.ts`](backend/src/logger/tskv-logger.spec.ts)) — 8 тестов: проверка формата TSKV, включения контекста, вызовов console.log/error/warn/debug, форматирования объектов
+- **FilmsController** ([`films.controller.spec.ts`](backend/src/films/films.controller.spec.ts)) — 3 теста: проверка создания контроллера, получения списка фильмов и расписания
+- **OrderController** ([`order.controller.spec.ts`](backend/src/order/order.controller.spec.ts)) — 2 теста: проверка создания контроллера и бронирования билетов
+
+Все тесты объединены в блоки `describe` с описанием проверяемой функциональности. Каждый тест содержит корректное описание того, что проверяет.
+
+Результат запуска `npm test`: **20 тестов, 0 ошибок**.
+
+#### Шаг 3. Контейнеризация приложения
+
+Созданы Dockerfile для бэкенда и фронтенда с multi-stage build, а также `docker-compose.yml` для запуска всех сервисов.
+
+**Dockerfile бэкенда** ([`backend/Dockerfile`](backend/Dockerfile)):
+- **Stage 1 (build)**: установка зависимостей и сборка проекта
+- **Stage 2 (production)**: только собранные артефакты и production-зависимости
+
+**Dockerfile фронтенда** ([`frontend/Dockerfile`](frontend/Dockerfile)):
+- **Stage 1 (build)**: установка зависимостей и сборка статики
+- **Stage 2 (production)**: nginx для раздачи статических файлов
+
+**Docker Compose** ([`docker-compose.yml`](docker-compose.yml)):
+- Сервис `database` — PostgreSQL 14
+- Сервис `backend` — NestJS приложение
+- Сервис `frontend` — React приложение на nginx
+- Переменные окружения загружаются из `.env` файла
+- Настроены связи между сервисами (`depends_on`)
+- Для каждого сервиса описана политика перезапуска (`restart: unless-stopped`)
+
+#### Шаг 4. Автоматизация деплоя (CI/CD)
+
+Создан GitHub Action ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)), который при пуше в ветку `main`:
+1. Собирает Docker-образ бэкенда
+2. Публикует его в GitHub Container Registry (ghcr.io)
+
 ## Установка и запуск
 
 ### Предварительные требования
