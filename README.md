@@ -168,31 +168,56 @@ film-react-nest/
 
 Результат запуска `npm test`: **20 тестов, 0 ошибок**.
 
-#### Шаг 3. Контейнеризация приложения
+#### Шаг 3. Деплой — контейнеризация и Docker Compose
 
-Созданы Dockerfile для бэкенда и фронтенда с multi-stage build, а также `docker-compose.yml` для запуска всех сервисов.
+Выполнена полная докеризация приложения для деплоя на удалённый сервер.
 
 **Dockerfile бэкенда** ([`backend/Dockerfile`](backend/Dockerfile)):
-- **Stage 1 (build)**: установка зависимостей и сборка проекта
-- **Stage 2 (production)**: только собранные артефакты и production-зависимости
+- **Stage 1 (build)**: установка зависимостей и сборка проекта (`npm run build`)
+- **Stage 2 (production)**: только production-зависимости и собранный `dist`
+- Указан образ в реестре `ghcr.io`
 
 **Dockerfile фронтенда** ([`frontend/Dockerfile`](frontend/Dockerfile)):
-- **Stage 1 (build)**: установка зависимостей и сборка статики
-- **Stage 2 (production)**: nginx для раздачи статических файлов
+- **Stage 1 (build)**: установка зависимостей и сборка статики (`npm run build`)
+- **Stage 2 (production)**: только собранный `dist` в volume для nginx
+- Указан образ в реестре `ghcr.io`
+
+**Nginx** ([`nginx/`](nginx/)):
+- Отдельный сервис для раздачи статики и проксирования запросов
+- Конфиг ([`nginx.conf`](nginx/nginx.conf)): раздача `index.html`, прокси `/api/` и `/content/` в бэкенд
+- Dockerfile ([`nginx/Dockerfile`](nginx/Dockerfile)) на основе `nginx:1.25-alpine`
+- Указан образ в реестре `ghcr.io`
 
 **Docker Compose** ([`docker-compose.yml`](docker-compose.yml)):
-- Сервис `database` — PostgreSQL 14
-- Сервис `backend` — NestJS приложение
-- Сервис `frontend` — React приложение на nginx
-- Переменные окружения загружаются из `.env` файла
-- Настроены связи между сервисами (`depends_on`)
-- Для каждого сервиса описана политика перезапуска (`restart: unless-stopped`)
+- `database` — PostgreSQL 14 с healthcheck и init-скриптами
+- `pgadmin` — pgAdmin 4 на порту 8080 для администрирования БД
+- `backend` — NestJS приложение, подключение к БД через переменные окружения
+- `frontend-build` — сборка фронтенда в volume `frontend-dist`
+- `nginx` — раздача статики из volume, прокси на backend
+- Все сервисы в одной сети `app-network`
+- Volumes: `pgdata` (БД), `pgadmin-data` (pgAdmin), `frontend-dist` (фронтенд)
+- Политика перезапуска `unless-stopped` для всех сервисов (кроме `frontend-build`)
+
+Запуск проекта:
+```bash
+docker compose up -d --build
+```
+
+После запуска:
+- Фронтенд доступен на `http://localhost:80`
+- pgAdmin доступен на `http://localhost:8080`
+- Бэкенд API доступен на `http://localhost:3000`
 
 #### Шаг 4. Автоматизация деплоя (CI/CD)
 
 Создан GitHub Action ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)), который при пуше в ветку `main`:
-1. Собирает Docker-образ бэкенда
-2. Публикует его в GitHub Container Registry (ghcr.io)
+1. Настраивает Docker Buildx через `docker/setup-buildx-action@v3`
+2. Логинится в GitHub Container Registry (ghcr.io) через `GITHUB_TOKEN`
+3. Собирает и публикует три образа:
+   - `ghcr.io/<repo>-backend` — бэкенд на NestJS
+   - `ghcr.io/<repo>-frontend` — фронтенд (собранный dist)
+   - `ghcr.io/<repo>-nginx` — nginx для раздачи статики и прокси
+4. Для каждого образа используются теги и метаданные через `docker/metadata-action@v5`
 
 ## Установка и запуск
 
