@@ -9,7 +9,7 @@ COPY tsconfig.app.json ./
 COPY vite.config.ts ./
 COPY index.html ./
 
-RUN npm ci
+RUN npm ci && npm install @rollup/rollup-linux-x64-musl --no-save
 
 COPY src/ src/
 COPY public/ public/
@@ -17,6 +17,6 @@ COPY public/ public/
 RUN npm run build
 
 # Stage 2: Production (just dist, nginx serves separately)
-FROM scratch AS production
+FROM alpine:3.19 AS production
 
 COPY --from=build /app/dist /dist

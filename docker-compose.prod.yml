@@ -11,9 +11,6 @@ services:
       - "${DATABASE_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./backend/test/prac.init.sql:/docker-entrypoint-initdb.d/01-init.sql
-      - ./backend/test/prac.films.sql:/docker-entrypoint-initdb.d/02-films.sql
-      - ./backend/test/prac.shedules.sql:/docker-entrypoint-initdb.d/03-shedules.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-exampleuser} -d ${DATABASE_NAME:-exampledb}"]
       interval: 5s
@@ -38,11 +35,7 @@ services:
       - app-network
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      tags:
-        - "${REGISTRY:-ghcr.io}/${IMAGE_NAME:-film-react-nest}-backend:latest"
+    image: ghcr.io/${GITHUB_REPOSITORY:-tolpil/film-react-nest}-backend:latest
     restart: unless-stopped
     env_file: .env
     environment:
@@ -60,30 +53,12 @@ services:
     networks:
       - app-network
 
-  frontend-build:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      tags:
-        - "${REGISTRY:-ghcr.io}/${IMAGE_NAME:-film-react-nest}-frontend:latest"
-    restart: "no"
-    entrypoint: ["/bin/sh", "-c", "exit 0"]
-    volumes:
-      - frontend-dist:/dist
-
   nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-      tags:
-        - "${REGISTRY:-ghcr.io}/${IMAGE_NAME:-film-react-nest}-nginx:latest"
+    image: ghcr.io/${GITHUB_REPOSITORY:-tolpil/film-react-nest}-nginx:latest
     restart: unless-stopped
     ports:
       - "${NGINX_PORT:-80}:80"
-    volumes:
-      - frontend-dist:/usr/share/nginx/html:ro
     depends_on:
-      - frontend-build
       - backend
     networks:
       - app-network
@@ -91,7 +66,6 @@ services:
 volumes:
   pgdata:
   pgadmin-data:
-  frontend-dist:
 
 networks:
   app-network:

@@ -198,6 +198,10 @@ film-react-nest/
 - Volumes: `pgdata` (БД), `pgadmin-data` (pgAdmin), `frontend-dist` (фронтенд)
 - Политика перезапуска `unless-stopped` для всех сервисов (кроме `frontend-build`)
 
+**Исправления в Dockerfile:**
+- [`backend/Dockerfile`](backend/Dockerfile): обновлён `node:18-alpine` → `node:20-alpine` (ошибка `crypto is not defined` в `@nestjs/typeorm`)
+- [`frontend/Dockerfile`](frontend/Dockerfile): добавлена установка `@rollup/rollup-linux-x64-musl` (ошибка `Cannot find module` на Alpine) и заменён `FROM scratch` на `FROM alpine:3.19` (ошибка `no command specified`)
+
 Запуск проекта:
 ```bash
 docker compose up -d --build
@@ -218,6 +222,33 @@ docker compose up -d --build
    - `ghcr.io/<repo>-frontend` — фронтенд (собранный dist)
    - `ghcr.io/<repo>-nginx` — nginx для раздачи статики и прокси
 4. Для каждого образа используются теги и метаданные через `docker/metadata-action@v5`
+
+#### Шаг 5. Развёртывание на удалённом сервере (Yandex Cloud)
+
+Приложение развёрнуто на виртуальной машине Yandex Cloud.
+
+**Подготовка сервера:**
+1. Создана учётная запись Yandex Cloud и платёжный аккаунт (использован грант)
+2. Создана виртуальная машина с публичным SSH-ключом
+3. Создано доменное имя через `domain.nomoreparties.site` и привязано к ВМ
+4. На сервере установлен Docker
+
+**Запуск приложения:**
+1. На сервере создана директория проекта
+2. Скопированы [`docker-compose.prod.yml`](docker-compose.prod.yml) и `.env` с настройками
+3. Запущены контейнеры: `docker compose -f docker-compose.prod.yml up -d`
+4. Образы спулены из GitHub Container Registry (ghcr.io)
+
+**Наполнение базы данных:**
+1. Выполнен вход в pgAdmin по адресу `http://<domain>:8080`
+2. Добавлено подключение к PostgreSQL (хост: `database`, порт: `5432`)
+3. Выполнены SQL-скрипты: `prac.init.sql` (создание таблиц), `prac.films.sql` (фильмы), `prac.shedules.sql` (расписание)
+
+**Безопасность:**
+- Порт PostgreSQL (5432) закрыт через фаервол, доступ только через SSH-туннель
+- Порт pgAdmin (8080) закрыт через фаервол при необходимости
+
+**Ссылка на задеплоенное приложение:** `https://<domain>`
 
 ## Установка и запуск
 
