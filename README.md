@@ -223,6 +223,15 @@ docker compose up -d --build
    - `ghcr.io/<repo>-nginx` — nginx для раздачи статики и прокси
 4. Для каждого образа используются теги и метаданные через `docker/metadata-action@v5`
 
+**Production-конфигурация** ([`docker-compose.prod.yml`](docker-compose.prod.yml)):
+- Использует готовые образы из ghcr.io вместо локальной сборки
+- Содержит сервис `frontend-build` с volume `frontend-dist` для передачи статики в nginx
+- Предназначен для развёртывания на удалённом сервере
+
+**Проверка линтинга:**
+- Бэкенд: `npm run lint` — 0 ошибок (исправлены CRLF-окончания строк через `--fix`)
+- Фронтенд: `npx eslint src/` — 0 ошибок
+
 #### Шаг 5. Развёртывание на удалённом сервере (Yandex Cloud)
 
 Приложение развёрнуто на виртуальной машине Yandex Cloud.
