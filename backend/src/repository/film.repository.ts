@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { FilmEntity } from './film.entity';
 import { ScheduleEntity } from './schedule.entity';
 import { FilmDto, FilmScheduleDto } from '../films/dto/films.dto';
@@ -29,7 +29,7 @@ export class FilmRepository {
 
   async findByIds(ids: string[]): Promise<FilmEntity[]> {
     return this.filmRepository.find({
-      where: { id: ids as any },
+      where: { id: In(ids) },
       relations: { schedule: true },
     });
   }
