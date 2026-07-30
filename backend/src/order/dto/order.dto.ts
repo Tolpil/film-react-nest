@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   IsUUID,
   Min,
@@ -32,9 +33,11 @@ export class TicketDto {
   @Min(0)
   price!: number;
 
+  @IsOptional()
   @IsString()
   day?: string;
 
+  @IsOptional()
   @IsString()
   time?: string;
 }
