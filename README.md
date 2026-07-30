@@ -192,11 +192,11 @@ film-react-nest/
 - `database` — PostgreSQL 14 с healthcheck и init-скриптами
 - `pgadmin` — pgAdmin 4 на порту 8080 для администрирования БД
 - `backend` — NestJS приложение, подключение к БД через переменные окружения
-- `frontend-build` — сборка фронтенда в volume `frontend-dist`
+- `frontend` — сборка фронтенда в volume `frontend-dist`
 - `nginx` — раздача статики из volume, прокси на backend
 - Все сервисы в одной сети `app-network`
 - Volumes: `pgdata` (БД), `pgadmin-data` (pgAdmin), `frontend-dist` (фронтенд)
-- Политика перезапуска `unless-stopped` для всех сервисов (кроме `frontend-build`)
+- Политика перезапуска `unless-stopped` для всех сервисов (кроме `frontend`)
 
 **Исправления в Dockerfile:**
 - [`backend/Dockerfile`](backend/Dockerfile): обновлён `node:18-alpine` → `node:20-alpine` (ошибка `crypto is not defined` в `@nestjs/typeorm`)
@@ -225,7 +225,8 @@ docker compose up -d --build
 
 **Production-конфигурация** ([`docker-compose.prod.yml`](docker-compose.prod.yml)):
 - Использует готовые образы из ghcr.io вместо локальной сборки
-- Содержит сервис `frontend-build` с volume `frontend-dist` для передачи статики в nginx
+- Содержит сервис `frontend` с volume `frontend-dist` для передачи статики в nginx
+- Порт database и pgadmin привязаны к `127.0.0.1` (недоступны снаружи)
 - Предназначен для развёртывания на удалённом сервере
 
 **Проверка линтинга:**
@@ -400,3 +401,5 @@ curl -X POST http://localhost:3000/api/afisha/order \
 11. **lint** — убран `--fix` из скрипта.
 12. **yarn.lock** удалён из backend, `packageManager: pnpm` убран из frontend.
 13. **deploy.yml** — явно указан тег `latest`.
+14. **pgadmin привязан к 127.0.0.1** — в `docker-compose.prod.yml` порт pgadmin изменён с `"${PGADMIN_PORT:-8080}:80"` на `"127.0.0.1:${PGADMIN_PORT:-8080}:80"` для предотвращения конфликтов docker-proxy.
+15. **Деплой на сервер** — выполнена синхронизация `docker-compose.prod.yml`, SQL-файлы переименованы в `01-init.sql`, `02-films.sql`, `03-shedules.sql` для правильного порядка выполнения, пересоздан volume `pgdata`. Все 5 контейнеров запущены, API отвечает.
