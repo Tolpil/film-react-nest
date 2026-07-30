@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as path from 'node:path';
 
@@ -21,13 +21,14 @@ import { ScheduleEntity } from './repository/schedule.entity';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: () => ({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: process.env.DATABASE_HOST || 'localhost',
-        port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-        database: process.env.DATABASE_NAME || 'exampledb',
-        username: process.env.DATABASE_USERNAME || 'exampleuser',
-        password: process.env.DATABASE_PASSWORD || 'examplepass',
+        host: configService.get<string>('DATABASE_HOST', 'localhost'),
+        port: configService.get<number>('DATABASE_PORT', 5432),
+        database: configService.get<string>('DATABASE_NAME', 'exampledb'),
+        username: configService.get<string>('DATABASE_USERNAME', 'exampleuser'),
+        password: configService.get<string>('DATABASE_PASSWORD', 'examplepass'),
         entities: [FilmEntity, ScheduleEntity],
         synchronize: false,
       }),
@@ -42,11 +43,6 @@ import { ScheduleEntity } from './repository/schedule.entity';
     }),
   ],
   controllers: [FilmsController, OrderController],
-  providers: [
-    configProvider,
-    FilmsService,
-    OrderService,
-    FilmRepository,
-  ],
+  providers: [configProvider, FilmsService, OrderService, FilmRepository],
 })
 export class AppModule {}

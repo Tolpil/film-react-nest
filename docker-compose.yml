@@ -60,7 +60,7 @@ services:
     networks:
       - app-network
 
-  frontend-build:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -83,7 +83,7 @@ services:
     volumes:
       - frontend-dist:/usr/share/nginx/html:ro
     depends_on:
-      - frontend-build
+      - frontend
       - backend
     networks:
       - app-network

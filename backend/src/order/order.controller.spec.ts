@@ -62,7 +62,7 @@ describe('OrderController', () => {
 
       mockOrderService.createOrder.mockResolvedValue(expectedResult);
 
-      const result = await controller.createOrder(createOrderDto);
+      const result = await controller.create(createOrderDto);
       expect(result).toEqual(expectedResult);
       expect(mockOrderService.createOrder).toHaveBeenCalledWith(createOrderDto);
     });

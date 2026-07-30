@@ -54,7 +54,7 @@ services:
     networks:
       - app-network
 
-  frontend-build:
+  frontend:
     image: ghcr.io/${GITHUB_REPOSITORY:-tolpil/film-react-nest}-frontend:latest
     restart: "no"
     entrypoint: ["/bin/sh", "-c", "exit 0"]
@@ -69,7 +69,7 @@ services:
     volumes:
       - frontend-dist:/usr/share/nginx/html:ro
     depends_on:
-      - frontend-build
+      - frontend
       - backend
     networks:
       - app-network
