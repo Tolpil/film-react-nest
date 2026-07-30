@@ -380,3 +380,23 @@ curl -X POST http://localhost:3000/api/afisha/order \
 - ✅ Код и зависимости mongoose удалены из проекта
 - ✅ Описаны сущности Film и Schedule со связью один-ко-многим
 - ✅ Взаимодействие с данными через репозитории TypeORM
+
+---
+
+### Исправление замечаний ревьюера (review-2)
+
+Все замечания "Надо исправить" и "Можно лучше" исправлены:
+
+1. **ValidationPipe + DTO-валидация** — глобальный `ValidationPipe` в `main.ts` с `whitelist`, `forbidNonWhitelisted`, `transform`. Декораторы `class-validator` добавлены в `order.dto.ts` и `films.dto.ts`.
+2. **@HttpCode(200)** — добавлен в `OrderController` для `POST /api/afisha/order`.
+3. **ConfigService** — `app.config.provider.ts` переписан на `useFactory` с `inject: [ConfigService]`.
+4. **Строгая типизация** — включены все strict-опции в `tsconfig.json`, убран `no-explicit-any: off` из `.eslintrc.js`, добавлены `// eslint-disable-next-line` в логгерах.
+5. **Атомарное бронирование** — `OrderService` использует `DataSource.transaction()` и raw SQL `UPDATE ... WHERE NOT ($1 = ANY(taken))`.
+6. **.env удалён** из репозитория.
+7. **.env.example обновлён** — добавлены `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `PGADMIN_PORT`, `NGINX_PORT`, `REGISTRY`, `IMAGE_NAME`, `GITHUB_REPOSITORY`.
+8. **frontend/.env.example** — URL заменены на относительные пути `/api/afisha` и `/content/afisha`.
+9. **docker-compose** — сервис `frontend-build` переименован в `frontend`.
+10. **app.e2e-spec.ts** — заменён на тест `GET /api/afisha/films`.
+11. **lint** — убран `--fix` из скрипта.
+12. **yarn.lock** удалён из backend, `packageManager: pnpm` убран из frontend.
+13. **deploy.yml** — явно указан тег `latest`.
