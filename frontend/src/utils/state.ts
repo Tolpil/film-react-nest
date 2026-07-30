@@ -12,6 +12,7 @@ export interface AppState {
     modal: Modals | null;
     message: string;
     isError: boolean;
+    loading: boolean;
 }
 
 export type Actions =
@@ -24,7 +25,9 @@ export type Actions =
     | { type: 'setContacts', payload: Contacts }
     | { type: 'openModal', payload: Modals }
     | { type: 'closeModal' }
-    | { type: 'clearBasket' };
+    | { type: 'clearBasket' }
+    | { type: 'setError', payload: string }
+    | { type: 'setLoading', payload: boolean };
 
 export const initialState: AppState = {
     films: [],
@@ -38,7 +41,8 @@ export const initialState: AppState = {
     },
     modal: null,
     message: '',
-    isError: false
+    isError: false,
+    loading: false
 };
 
 const addTicket = (state: AppState, key: string): AppState => {
@@ -151,7 +155,25 @@ export function appReducer(state: AppState, action: Actions): AppState {
             return {
                 ...state,
                 selectedSession: null,
-                basket: []
+                basket: [],
+                contacts: {
+                    email: '',
+                    phone: ''
+                }
+            };
+        case 'setError':
+            return {
+                ...state,
+                message: action.payload,
+                isError: true,
+                loading: false
+            };
+        case 'setLoading':
+            return {
+                ...state,
+                loading: action.payload,
+                message: '',
+                isError: false
             };
     }
     return state;

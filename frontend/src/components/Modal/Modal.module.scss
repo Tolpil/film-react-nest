@@ -47,12 +47,21 @@
     text-overflow: ellipsis;
     overflow: hidden;
   }
+
+  .error {
+    color: $error;
+    white-space: normal;
+    max-width: 100%;
+    text-overflow: unset;
+    overflow: visible;
+    background-color: rgba(255, 0, 0, 0.1);
+    border: 1px solid $error;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+  }
 }
 
 .active {
   display: flex;
-}
-
-.error {
-  color: $error;
 }

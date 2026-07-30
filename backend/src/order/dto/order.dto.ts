@@ -12,42 +12,48 @@ import { Type } from 'class-transformer';
 
 export class TicketDto {
   @IsUUID()
-  film: string;
+  film!: string;
 
   @IsUUID()
-  session: string;
+  session!: string;
 
   @IsString()
-  daytime: string;
+  daytime!: string;
 
   @IsNumber()
   @Min(1)
-  row: number;
+  row!: number;
 
   @IsNumber()
   @Min(1)
-  seat: number;
+  seat!: number;
 
   @IsNumber()
   @Min(0)
-  price: number;
+  price!: number;
+
+  @IsString()
+  day?: string;
+
+  @IsString()
+  time?: string;
 }
 
 export class CreateOrderDto {
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty()
-  phone: string;
+  phone!: string;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => TicketDto)
   @IsNotEmpty()
-  tickets: TicketDto[];
+  tickets!: TicketDto[];
 }
 
 export class OrderDto extends TicketDto {
-  id: string;
+  id!: string;
 }
