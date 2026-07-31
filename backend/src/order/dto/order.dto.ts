@@ -1,18 +1,63 @@
+import {
+  ArrayMinSize,
+  IsArray,
+  IsEmail,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
 export class TicketDto {
-  film: string;
-  session: string;
-  daytime: string;
-  row: number;
-  seat: number;
-  price: number;
+  @IsUUID()
+  film!: string;
+
+  @IsUUID()
+  session!: string;
+
+  @IsString()
+  daytime!: string;
+
+  @IsNumber()
+  @Min(1)
+  row!: number;
+
+  @IsNumber()
+  @Min(1)
+  seat!: number;
+
+  @IsNumber()
+  @Min(0)
+  price!: number;
+
+  @IsOptional()
+  @IsString()
+  day?: string;
+
+  @IsOptional()
+  @IsString()
+  time?: string;
 }
 
 export class CreateOrderDto {
-  email: string;
-  phone: string;
-  tickets: TicketDto[];
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone!: string;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => TicketDto)
+  tickets!: TicketDto[];
 }
 
 export class OrderDto extends TicketDto {
-  id: string;
+  id!: string;
 }

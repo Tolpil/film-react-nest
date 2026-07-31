@@ -1,6 +1,6 @@
 import {ReactNode, Reducer, useEffect, useReducer, useRef} from "react";
 import {Actions, appReducer, AppState, initialState, Modals} from "../utils/state.ts";
-import {Contacts, FilmAPI, IFilmAPI, Movie, Session} from "../utils/api.ts";
+import {Contacts, FilmAPI, IFilmAPI, Movie, Session, Ticket} from "../utils/api.ts";
 import {API_URL, CDN_URL} from "../utils/constants.ts";
 import {Button} from "../components/Button/Button.tsx";
 
@@ -38,15 +38,22 @@ export function useAppState() {
     const closeModal = () => dispatch({ type: 'closeModal' });
     const setContacts = (contacts: Contacts) => dispatch({ type: 'setContacts', payload: contacts });
 
-    const orderTickets = () => {
-        api.current.orderTickets({
-            email: state.contacts.email,
-            phone: state.contacts.phone,
-            tickets: state.basket
-        }).then(() => {
+    const orderTickets = async () => {
+        if (state.loading) return;
+        dispatch({ type: 'setLoading', payload: true });
+        try {
+            const tickets: Array<Omit<Ticket, 'day' | 'time'>> = state.basket.map(({ day, time, ...ticket }) => ticket);
+            await api.current.orderTickets({
+                email: state.contacts.email,
+                phone: state.contacts.phone,
+                tickets: tickets as Ticket[]
+            });
             dispatch({ type: 'clearBasket' });
             dispatch({ type: 'openModal', payload: 'success' });
-        });
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Ошибка при оформлении заказа';
+            dispatch({ type: 'setError', payload: message });
+        }
     };
 
     const go = (direction: 'next' | 'prev') => () => {
@@ -75,9 +82,9 @@ export function useAppState() {
                 disabled={state.basket.length === 0}
             />,
             'contacts': <Button
-                label={"Оплатить"}
+                label={state.loading ? "Оформляем..." : "Оплатить"}
                 onClick={orderTickets}
-                disabled={!state.contacts.email || !state.contacts.phone}
+                disabled={!state.contacts.email || !state.contacts.phone || state.loading}
             />,
             'success': null
         };

@@ -134,11 +134,137 @@ film-react-nest/
 - [`prac.films.sql`](backend/test/prac.films.sql) — заполнение таблицы фильмов (6 фильмов)
 - [`prac.shedules.sql`](backend/test/prac.shedules.sql) — заполнение таблицы расписания сеансов
 
+---
+
+### Третья часть проектной работы — Деплой сервиса
+
+Реализация системы логирования, юнит-тестов, контейнеризация и автоматизация деплоя.
+
+#### Шаг 1. Реализация логгеров
+
+Созданы три логгера в директории [`backend/src/logger/`](backend/src/logger/):
+
+- **DevLogger** ([`dev-logger.ts`](backend/src/logger/dev-logger.ts)) — наследуется от `ConsoleLogger` NestJS, используется в режиме разработки. Сохраняет цветной вывод в консоль.
+- **JsonLogger** ([`json-logger.ts`](backend/src/logger/json-logger.ts)) — реализует `LoggerService`, выводит логи в формате JSON: `{"level": "...", "message": "...", "optionalParams": [...]}`.
+- **TSKVLogger** ([`tskv-logger.ts`](backend/src/logger/tskv-logger.ts)) — реализует `LoggerService`, выводит логи в формате TSKV (Tab-Separated Key-Value): `level=...\tmessage=...\tcontext=...`.
+
+Выбор логгера происходит через переменную окружения `LOG_FORMAT` в файле `.env`:
+- `dev` (по умолчанию) — DevLogger
+- `json` — JsonLogger
+- `tskv` — TSKVLogger
+
+Логгер подключается в [`main.ts`](backend/src/main.ts) через `app.useLogger()` с опцией `bufferLogs: true`. Выбор реализации осуществляется через `switch` по переменной `LOG_FORMAT`.
+
+#### Шаг 2. Написание тестов
+
+Созданы юнит-тесты для логгеров и контроллеров:
+
+- **JsonLogger** ([`json-logger.spec.ts`](backend/src/logger/json-logger.spec.ts)) — 7 тестов: проверка формата JSON, включения optionalParams, вызовов console.log/error/warn/debug
+- **TSKVLogger** ([`tskv-logger.spec.ts`](backend/src/logger/tskv-logger.spec.ts)) — 8 тестов: проверка формата TSKV, включения контекста, вызовов console.log/error/warn/debug, форматирования объектов
+- **FilmsController** ([`films.controller.spec.ts`](backend/src/films/films.controller.spec.ts)) — 3 теста: проверка создания контроллера, получения списка фильмов и расписания
+- **OrderController** ([`order.controller.spec.ts`](backend/src/order/order.controller.spec.ts)) — 2 теста: проверка создания контроллера и бронирования билетов
+
+Все тесты объединены в блоки `describe` с описанием проверяемой функциональности. Каждый тест содержит корректное описание того, что проверяет.
+
+Результат запуска `npm test`: **20 тестов, 0 ошибок**.
+
+#### Шаг 3. Деплой — контейнеризация и Docker Compose
+
+Выполнена полная докеризация приложения для деплоя на удалённый сервер.
+
+**Dockerfile бэкенда** ([`backend/Dockerfile`](backend/Dockerfile)):
+- **Stage 1 (build)**: установка зависимостей и сборка проекта (`npm run build`)
+- **Stage 2 (production)**: только production-зависимости и собранный `dist`
+- Указан образ в реестре `ghcr.io`
+
+**Dockerfile фронтенда** ([`frontend/Dockerfile`](frontend/Dockerfile)):
+- **Stage 1 (build)**: установка зависимостей и сборка статики (`npm run build`)
+- **Stage 2 (production)**: только собранный `dist` в volume для nginx
+- Указан образ в реестре `ghcr.io`
+
+**Nginx** ([`nginx/`](nginx/)):
+- Отдельный сервис для раздачи статики и проксирования запросов
+- Конфиг ([`nginx.conf`](nginx/nginx.conf)): раздача `index.html`, прокси `/api/` и `/content/` в бэкенд
+- Dockerfile ([`nginx/Dockerfile`](nginx/Dockerfile)) на основе `nginx:1.25-alpine`
+- Указан образ в реестре `ghcr.io`
+
+**Docker Compose** ([`docker-compose.yml`](docker-compose.yml)):
+- `database` — PostgreSQL 14 с healthcheck и init-скриптами
+- `pgadmin` — pgAdmin 4 на порту 8080 для администрирования БД
+- `backend` — NestJS приложение, подключение к БД через переменные окружения
+- `frontend` — сборка фронтенда в volume `frontend-dist`
+- `nginx` — раздача статики из volume, прокси на backend
+- Все сервисы в одной сети `app-network`
+- Volumes: `pgdata` (БД), `pgadmin-data` (pgAdmin), `frontend-dist` (фронтенд)
+- Политика перезапуска `unless-stopped` для всех сервисов (кроме `frontend`)
+
+**Исправления в Dockerfile:**
+- [`backend/Dockerfile`](backend/Dockerfile): обновлён `node:18-alpine` → `node:20-alpine` (ошибка `crypto is not defined` в `@nestjs/typeorm`)
+- [`frontend/Dockerfile`](frontend/Dockerfile): добавлена установка `@rollup/rollup-linux-x64-musl` (ошибка `Cannot find module` на Alpine) и заменён `FROM scratch` на `FROM alpine:3.19` (ошибка `no command specified`)
+
+Запуск проекта:
+```bash
+docker compose up -d --build
+```
+
+После запуска:
+- Фронтенд доступен на `http://localhost:80`
+- pgAdmin доступен на `http://localhost:8080`
+- Бэкенд API доступен на `http://localhost:3000`
+
+#### Шаг 4. Автоматизация деплоя (CI/CD)
+
+Создан GitHub Action ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)), который при пуше в ветку `main`:
+1. Настраивает Docker Buildx через `docker/setup-buildx-action@v3`
+2. Логинится в GitHub Container Registry (ghcr.io) через `GITHUB_TOKEN`
+3. Собирает и публикует три образа:
+   - `ghcr.io/<repo>-backend` — бэкенд на NestJS
+   - `ghcr.io/<repo>-frontend` — фронтенд (собранный dist)
+   - `ghcr.io/<repo>-nginx` — nginx для раздачи статики и прокси
+4. Для каждого образа используются теги и метаданные через `docker/metadata-action@v5`
+
+**Production-конфигурация** ([`docker-compose.prod.yml`](docker-compose.prod.yml)):
+- Использует готовые образы из ghcr.io вместо локальной сборки
+- Содержит сервис `frontend` с volume `frontend-dist` для передачи статики в nginx
+- Порт database и pgadmin привязаны к `127.0.0.1` (недоступны снаружи)
+- Предназначен для развёртывания на удалённом сервере
+
+**Проверка линтинга:**
+- Бэкенд: `npm run lint` — 0 ошибок
+- Фронтенд: `npx eslint src/` — 0 ошибок
+
+#### Шаг 5. Развёртывание на удалённом сервере (Yandex Cloud)
+
+Приложение развёрнуто на виртуальной машине Yandex Cloud.
+
+**Подготовка сервера:**
+1. Создана учётная запись Yandex Cloud и платёжный аккаунт (использован грант)
+2. Создана виртуальная машина с публичным SSH-ключом
+3. Создано доменное имя через `domain.nomoreparties.site` и привязано к ВМ
+4. На сервере установлен Docker
+
+**Запуск приложения:**
+1. На сервере создана директория проекта
+2. Скопированы [`docker-compose.prod.yml`](docker-compose.prod.yml) и `.env` с настройками
+3. Запущены контейнеры: `docker compose -f docker-compose.prod.yml up -d`
+4. Образы спулены из GitHub Container Registry (ghcr.io)
+
+**Наполнение базы данных:**
+1. Выполнен вход в pgAdmin по адресу `http://<domain>:8080`
+2. Добавлено подключение к PostgreSQL (хост: `database`, порт: `5432`)
+3. Выполнены SQL-скрипты: `prac.init.sql` (создание таблиц), `prac.films.sql` (фильмы), `prac.shedules.sql` (расписание)
+
+**Безопасность:**
+- Порт PostgreSQL (5432) закрыт через фаервол, доступ только через SSH-туннель
+- Порт pgAdmin (8080) закрыт через фаервол при необходимости
+
+**Ссылка на задеплоенное приложение:** `http://domaintolpil.student.nomorepartiessite.ru` (IP: `158.160.224.132`)
+
 ## Установка и запуск
 
 ### Предварительные требования
 
-- Node.js 18+
+- Node.js 20+
 - PostgreSQL 14+ (установленная и запущенная)
 - npm или yarn
 
@@ -255,3 +381,28 @@ curl -X POST http://localhost:3000/api/afisha/order \
 - ✅ Код и зависимости mongoose удалены из проекта
 - ✅ Описаны сущности Film и Schedule со связью один-ко-многим
 - ✅ Взаимодействие с данными через репозитории TypeORM
+
+---
+
+### Исправление замечаний ревьюера (review-2)
+
+Все замечания "Надо исправить" и "Можно лучше" исправлены:
+
+1. **ValidationPipe + DTO-валидация** — глобальный `ValidationPipe` в `main.ts` с `whitelist`, `forbidNonWhitelisted`, `transform`. Декораторы `class-validator` добавлены в `order.dto.ts` и `films.dto.ts`.
+2. **@HttpCode(200)** — добавлен в `OrderController` для `POST /api/afisha/order`.
+3. **ConfigService** — `app.config.provider.ts` переписан на `useFactory` с `inject: [ConfigService]`.
+4. **Строгая типизация** — включены все strict-опции в `tsconfig.json`, убран `no-explicit-any: off` из `.eslintrc.js`, `any` заменён на `unknown` в логгерах с функцией `serialize()`.
+5. **Атомарное бронирование** — `OrderService` использует `DataSource.transaction()` и raw SQL `UPDATE ... WHERE NOT ($1 = ANY(taken))`.
+6. **.env удалён** из репозитория и добавлен в `.gitignore`.
+7. **.env.example обновлён** — добавлены `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `PGADMIN_PORT`, `NGINX_PORT`, `REGISTRY`, `IMAGE_NAME`, `GITHUB_REPOSITORY`, `CORS_ORIGIN`.
+8. **frontend/.env.example** — URL заменены на относительные пути `/api/afisha` и `/content/afisha`.
+9. **docker-compose** — сервис `frontend-build` переименован в `frontend`.
+10. **app.e2e-spec.ts** — заменён на тест `GET /api/afisha/films`.
+11. **lint** — убран `--fix` из скрипта.
+12. **yarn.lock** удалён из backend, `packageManager: pnpm` убран из frontend.
+13. **deploy.yml** — явно указан тег `latest`.
+14. **pgadmin привязан к 127.0.0.1** — в `docker-compose.prod.yml` порт pgadmin изменён с `"${PGADMIN_PORT:-8080}:80"` на `"127.0.0.1:${PGADMIN_PORT:-8080}:80"` для предотвращения конфликтов docker-proxy.
+15. **Деплой на сервер** — выполнена синхронизация `docker-compose.prod.yml`, SQL-файлы переименованы в `01-init.sql`, `02-films.sql`, `03-shedules.sql` для правильного порядка выполнения, пересоздан volume `pgdata`. Все 5 контейнеров запущены, API отвечает.
+16. **@ArrayMinSize(1)** — заменён `@IsNotEmpty()` на `@ArrayMinSize(1)` для поля `tickets` в `CreateOrderDto`, чтобы пустой массив билетов возвращал 400.
+17. **CORS через ConfigService** — `app.enableCors()` в `main.ts` принимает `origin` из `configService.get<string>('CORS_ORIGIN', '*')`.
+18. **Node.js 20+** — обновлены требования в README (TypeORM 1.1.0 требует Node.js 20+).

@@ -1,34 +1,88 @@
+import { IsString, IsNumber, IsArray, IsUUID, Min } from 'class-validator';
+
 export class FilmDto {
-  id: string;
-  rating: number;
-  director: string;
-  tags: string[];
-  title: string;
-  about: string;
-  description: string;
-  image: string;
-  cover: string;
+  @IsUUID()
+  id!: string;
+
+  @IsNumber()
+  rating!: number;
+
+  @IsString()
+  director!: string;
+
+  @IsArray()
+  tags!: string[];
+
+  @IsString()
+  title!: string;
+
+  @IsString()
+  about!: string;
+
+  @IsString()
+  description!: string;
+
+  @IsString()
+  image!: string;
+
+  @IsString()
+  cover!: string;
 }
 
 export class ScheduleDto {
-  id: string;
-  daytime: string;
-  hall: string;
-  rows: number;
-  seats: number;
-  price: number;
-  taken: string[];
+  @IsUUID()
+  id!: string;
+
+  @IsString()
+  daytime!: string;
+
+  @IsString()
+  hall!: string;
+
+  @IsNumber()
+  @Min(1)
+  rows!: number;
+
+  @IsNumber()
+  @Min(1)
+  seats!: number;
+
+  @IsNumber()
+  @Min(0)
+  price!: number;
+
+  @IsArray()
+  taken!: string[];
 }
 
 export class FilmScheduleDto {
-  id: string;
-  rating: number;
-  director: string;
-  tags: string[];
-  title: string;
-  about: string;
-  description: string;
-  image: string;
-  cover: string;
-  schedule: ScheduleDto[];
+  @IsUUID()
+  id!: string;
+
+  @IsNumber()
+  rating!: number;
+
+  @IsString()
+  director!: string;
+
+  @IsArray()
+  tags!: string[];
+
+  @IsString()
+  title!: string;
+
+  @IsString()
+  about!: string;
+
+  @IsString()
+  description!: string;
+
+  @IsString()
+  image!: string;
+
+  @IsString()
+  cover!: string;
+
+  @IsArray()
+  schedule!: ScheduleDto[];
 }

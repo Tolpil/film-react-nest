@@ -1,4 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/order.dto';
 
@@ -7,7 +14,9 @@ export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post()
-  async createOrder(@Body() createOrderDto: CreateOrderDto) {
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async create(@Body() createOrderDto: CreateOrderDto) {
     return this.orderService.createOrder(createOrderDto);
   }
 }
