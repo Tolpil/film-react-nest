@@ -264,7 +264,7 @@ docker compose up -d --build
 
 ### Предварительные требования
 
-- Node.js 18+
+- Node.js 20+
 - PostgreSQL 14+ (установленная и запущенная)
 - npm или yarn
 
@@ -391,10 +391,10 @@ curl -X POST http://localhost:3000/api/afisha/order \
 1. **ValidationPipe + DTO-валидация** — глобальный `ValidationPipe` в `main.ts` с `whitelist`, `forbidNonWhitelisted`, `transform`. Декораторы `class-validator` добавлены в `order.dto.ts` и `films.dto.ts`.
 2. **@HttpCode(200)** — добавлен в `OrderController` для `POST /api/afisha/order`.
 3. **ConfigService** — `app.config.provider.ts` переписан на `useFactory` с `inject: [ConfigService]`.
-4. **Строгая типизация** — включены все strict-опции в `tsconfig.json`, убран `no-explicit-any: off` из `.eslintrc.js`, добавлены `// eslint-disable-next-line` в логгерах.
+4. **Строгая типизация** — включены все strict-опции в `tsconfig.json`, убран `no-explicit-any: off` из `.eslintrc.js`, `any` заменён на `unknown` в логгерах с функцией `serialize()`.
 5. **Атомарное бронирование** — `OrderService` использует `DataSource.transaction()` и raw SQL `UPDATE ... WHERE NOT ($1 = ANY(taken))`.
-6. **.env удалён** из репозитория.
-7. **.env.example обновлён** — добавлены `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `PGADMIN_PORT`, `NGINX_PORT`, `REGISTRY`, `IMAGE_NAME`, `GITHUB_REPOSITORY`.
+6. **.env удалён** из репозитория и добавлен в `.gitignore`.
+7. **.env.example обновлён** — добавлены `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `PGADMIN_PORT`, `NGINX_PORT`, `REGISTRY`, `IMAGE_NAME`, `GITHUB_REPOSITORY`, `CORS_ORIGIN`.
 8. **frontend/.env.example** — URL заменены на относительные пути `/api/afisha` и `/content/afisha`.
 9. **docker-compose** — сервис `frontend-build` переименован в `frontend`.
 10. **app.e2e-spec.ts** — заменён на тест `GET /api/afisha/films`.
@@ -403,3 +403,6 @@ curl -X POST http://localhost:3000/api/afisha/order \
 13. **deploy.yml** — явно указан тег `latest`.
 14. **pgadmin привязан к 127.0.0.1** — в `docker-compose.prod.yml` порт pgadmin изменён с `"${PGADMIN_PORT:-8080}:80"` на `"127.0.0.1:${PGADMIN_PORT:-8080}:80"` для предотвращения конфликтов docker-proxy.
 15. **Деплой на сервер** — выполнена синхронизация `docker-compose.prod.yml`, SQL-файлы переименованы в `01-init.sql`, `02-films.sql`, `03-shedules.sql` для правильного порядка выполнения, пересоздан volume `pgdata`. Все 5 контейнеров запущены, API отвечает.
+16. **@ArrayMinSize(1)** — заменён `@IsNotEmpty()` на `@ArrayMinSize(1)` для поля `tickets` в `CreateOrderDto`, чтобы пустой массив билетов возвращал 400.
+17. **CORS через ConfigService** — `app.enableCors()` в `main.ts` принимает `origin` из `configService.get<string>('CORS_ORIGIN', '*')`.
+18. **Node.js 20+** — обновлены требования в README (TypeORM 1.1.0 требует Node.js 20+).

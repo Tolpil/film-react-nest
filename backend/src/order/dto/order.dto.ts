@@ -1,4 +1,5 @@
 import {
+  ArrayMinSize,
   IsArray,
   IsEmail,
   IsNotEmpty,
@@ -51,9 +52,9 @@ export class CreateOrderDto {
   phone!: string;
 
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => TicketDto)
-  @IsNotEmpty()
   tickets!: TicketDto[];
 }
 

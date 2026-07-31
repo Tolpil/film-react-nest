@@ -14,7 +14,9 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   app.setGlobalPrefix('api/afisha');
-  app.enableCors();
+  app.enableCors({
+    origin: configService.get<string>('CORS_ORIGIN', '*'),
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
